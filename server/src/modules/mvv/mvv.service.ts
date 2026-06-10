@@ -174,6 +174,44 @@ export class MvvService {
       result[type] = items;
     }
 
+    // 按人员统计
+    const userMap = new Map<number, {
+      id: number;
+      nickname: string;
+      total_submissions: number;
+      total_votes_received: number;
+      submissions: { mission: any[]; vision: any[]; values: any[] };
+    }>();
+
+    for (const item of all) {
+      const uid = (item as any).user_id;
+      const nickname = (item as any).users?.nickname ?? '匿名用户';
+      if (!userMap.has(uid)) {
+        userMap.set(uid, {
+          id: uid,
+          nickname,
+          total_submissions: 0,
+          total_votes_received: 0,
+          submissions: { mission: [], vision: [], values: [] },
+        });
+      }
+      const userStats = userMap.get(uid)!;
+      userStats.total_submissions += 1;
+      userStats.total_votes_received += (item as any).vote_count ?? 0;
+      const type = (item as any).type as 'mission' | 'vision' | 'values';
+      userStats.submissions[type].push(item);
+    }
+
+    result.users = Array.from(userMap.values())
+      .sort((a, b) => b.total_votes_received - a.total_votes_received);
+
+    // 总览数据
+    result.overview = {
+      total_users: userMap.size,
+      total_submissions: all.length,
+      total_votes: all.reduce((sum: number, s: any) => sum + (s.vote_count ?? 0), 0),
+    };
+
     return result;
   }
 }

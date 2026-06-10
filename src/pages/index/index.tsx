@@ -50,17 +50,32 @@ const IndexPage: FC = () => {
   const [recentSubmissions, setRecentSubmissions] = useState<SubmissionItem[]>([]);
   const [loading, setLoading] = useState(false);
 
-  // 加载最近提交
+  // 数据概览
+  const [overview, setOverview] = useState<{
+    total_users: number;
+    total_submissions: number;
+    total_votes: number;
+  } | null>(null);
+
+  // 加载最近提交 + 概览
   const loadRecent = async () => {
     if (!user) return;
     setLoading(true);
     try {
-      const res = await Network.request({ url: '/api/mvv/submissions', method: 'GET' });
-      console.log('最近提交数据:', res.data);
-      const list = (res.data as any)?.data ?? [];
+      const [subRes, statsRes] = await Promise.all([
+        Network.request({ url: '/api/mvv/submissions', method: 'GET' }),
+        Network.request({ url: '/api/mvv/stats', method: 'GET' }),
+      ]);
+      console.log('最近提交数据:', subRes.data);
+      console.log('概览数据:', statsRes.data);
+      const list = (subRes.data as any)?.data ?? [];
       setRecentSubmissions(list.slice(0, 10));
+      const stats = (statsRes.data as any)?.data;
+      if (stats?.overview) {
+        setOverview(stats.overview);
+      }
     } catch (err) {
-      console.error('加载提交列表失败:', err);
+      console.error('加载数据失败:', err);
     } finally {
       setLoading(false);
     }
@@ -199,9 +214,15 @@ const IndexPage: FC = () => {
         </DialogContent>
       </Dialog>
 
-      {/* 页面标题和用户信息 */}
-      <View className="bg-white px-4 pt-4 pb-2">
-        <View className="flex flex-row items-center justify-between">
+      {/* 页面标题和统计概览 */}
+      <View className="bg-white px-4 pt-4 pb-3"
+        style={{
+          borderBottomLeftRadius: 16,
+          borderBottomRightRadius: 16,
+          boxShadow: '0 1px 4px rgba(0,0,0,0.04)',
+        }}
+      >
+        <View className="flex flex-row items-center justify-between mb-3">
           <View>
             <Text className="block text-lg font-semibold text-gray-900">智联数通使命愿景共创</Text>
             <Text className="block text-xs text-gray-500 mt-1">
@@ -210,7 +231,7 @@ const IndexPage: FC = () => {
           </View>
           {user && (
             <View
-              className="flex flex-row items-center gap-1 bg-gray-100 rounded-full px-3 py-1"
+              className="flex flex-row items-center gap-1 bg-gray-100 rounded-full px-3 py-2"
               onClick={handleSwitchUser}
             >
               <Pencil size={14} color="#666" />
@@ -218,6 +239,26 @@ const IndexPage: FC = () => {
             </View>
           )}
         </View>
+
+        {/* 数据概览 */}
+        {overview && (
+          <View className="flex flex-row bg-blue-50 rounded-xl px-3 py-3 gap-3">
+            <View className="flex-1 items-center">
+              <Text className="block text-lg font-bold text-blue-600">{overview.total_users}</Text>
+              <Text className="block text-xs text-blue-400">参与人数</Text>
+            </View>
+            <View className="w-px bg-blue-100" />
+            <View className="flex-1 items-center">
+              <Text className="block text-lg font-bold text-blue-600">{overview.total_submissions}</Text>
+              <Text className="block text-xs text-blue-400">提交条数</Text>
+            </View>
+            <View className="w-px bg-blue-100" />
+            <View className="flex-1 items-center">
+              <Text className="block text-lg font-bold text-blue-600">{overview.total_votes}</Text>
+              <Text className="block text-xs text-blue-400">总投票数</Text>
+            </View>
+          </View>
+        )}
       </View>
 
       <ScrollView className="flex-1 px-4 pb-4">

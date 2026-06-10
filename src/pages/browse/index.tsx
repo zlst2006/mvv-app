@@ -140,22 +140,38 @@ const BrowsePage: FC = () => {
   return (
     <View className="flex flex-col h-full bg-gray-50">
       {/* TabBar 类型切换 */}
-      <View className="bg-white px-4 pt-3 pb-2">
-        <Text className="block text-lg font-semibold text-gray-900 mb-3">浏览 MVV</Text>
+      <View className="bg-white px-4 pt-3 pb-2"
+        style={{
+          borderBottomLeftRadius: 16,
+          borderBottomRightRadius: 16,
+          boxShadow: '0 1px 4px rgba(0,0,0,0.04)',
+        }}
+      >
+        <View className="flex flex-row items-center justify-between mb-3">
+          <Text className="block text-lg font-semibold text-gray-900">浏览 MVV</Text>
+          <Text className="block text-xs text-gray-400">
+            {submissions.length} 条提交
+          </Text>
+        </View>
         <View className="flex flex-row gap-2">
-          {TYPE_OPTIONS.map((opt) => (
-            <View
-              key={opt.key}
-              className={`px-4 py-2 rounded-full border text-sm font-medium ${
-                activeTab === opt.key
-                  ? 'bg-blue-500 text-white border-blue-500'
-                  : 'bg-white text-gray-500 border-gray-200'
-              }`}
-              onClick={() => setActiveTab(opt.key)}
-            >
-              <Text className="block text-sm">{opt.label}</Text>
-            </View>
-          ))}
+          {TYPE_OPTIONS.map((opt) => {
+            const count = opt.key === 'all'
+              ? submissions.length
+              : submissions.filter((s) => s.type === opt.key).length;
+            return (
+              <View
+                key={opt.key}
+                className={`px-4 py-2 rounded-full border text-sm font-medium ${
+                  activeTab === opt.key
+                    ? 'bg-blue-500 text-white border-blue-500'
+                    : 'bg-white text-gray-500 border-gray-200'
+                }`}
+                onClick={() => setActiveTab(opt.key)}
+              >
+                <Text className="block text-sm">{opt.label} ({count})</Text>
+              </View>
+            );
+          })}
         </View>
       </View>
 
