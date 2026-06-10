@@ -174,7 +174,7 @@ const IndexPage: FC = () => {
       >
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>👋 欢迎加入 MVV 共创</DialogTitle>
+            <DialogTitle>👋 欢迎加入智联数通使命愿景共创</DialogTitle>
           </DialogHeader>
           <View className="py-4">
             <Text className="block text-sm text-gray-500 mb-3">
@@ -203,7 +203,7 @@ const IndexPage: FC = () => {
       <View className="bg-white px-4 pt-4 pb-2">
         <View className="flex flex-row items-center justify-between">
           <View>
-            <Text className="block text-lg font-semibold text-gray-900">撰写 MVV</Text>
+            <Text className="block text-lg font-semibold text-gray-900">智联数通使命愿景共创</Text>
             <Text className="block text-xs text-gray-500 mt-1">
               写下你对公司使命、愿景、价值观的想法
             </Text>
