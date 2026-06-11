@@ -214,4 +214,40 @@ export class MvvService {
 
     return result;
   }
+
+  // ========== 讨论消息 ==========
+
+  async sendMessage(userId: number, content: string, isAnonymous: boolean) {
+    const { data, error } = await this.client
+      .from('mvv_messages')
+      .insert({ user_id: userId, content, is_anonymous: isAnonymous })
+      .select('*, users!inner(id, nickname)')
+      .single();
+    if (error) throw new Error(`发送消息失败: ${error.message}`);
+    return data;
+  }
+
+  async getMessages(limit = 50, beforeId?: number) {
+    let query = this.client
+      .from('mvv_messages')
+      .select('*, users!inner(id, nickname)')
+      .order('created_at', { ascending: false })
+      .limit(limit);
+
+    if (beforeId) {
+      query = query.lt('id', beforeId);
+    }
+
+    const { data, error } = await query;
+    if (error) throw new Error(`查询消息失败: ${error.message}`);
+    return (data ?? []).reverse();
+  }
+
+  async getMessageCount() {
+    const { count, error } = await this.client
+      .from('mvv_messages')
+      .select('*', { count: 'exact', head: true });
+    if (error) throw new Error(`查询消息数失败: ${error.message}`);
+    return count ?? 0;
+  }
 }

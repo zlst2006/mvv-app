@@ -3,11 +3,12 @@ export default defineAppConfig({
     'pages/index/index',
     'pages/browse/index',
     'pages/stats/index',
+    'pages/chat/index',
   ],
   window: {
     backgroundTextStyle: 'light',
     navigationBarBackgroundColor: '#fff',
-    navigationBarTitleText: 'MVV 共创',
+    navigationBarTitleText: '智联数通',
     navigationBarTextStyle: 'black',
   },
   tabBar: {
@@ -33,6 +34,12 @@ export default defineAppConfig({
         text: '统计',
         iconPath: './assets/tabbar/chart-bar-stacked.png',
         selectedIconPath: './assets/tabbar/chart-bar-stacked-active.png',
+      },
+      {
+        pagePath: 'pages/chat/index',
+        text: '讨论',
+        iconPath: './assets/tabbar/message-circle.png',
+        selectedIconPath: './assets/tabbar/message-circle-active.png',
       },
     ],
   },

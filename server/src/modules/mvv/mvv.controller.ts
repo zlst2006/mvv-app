@@ -124,4 +124,34 @@ export class MvvController {
     const data = await this.mvvService.getStats();
     return { code: 200, msg: 'success', data };
   }
+
+  // ========== 讨论消息 ==========
+
+  @Post('messages')
+  async sendMessage(
+    @Body() body: { user_id: number; content: string; is_anonymous: boolean },
+  ) {
+    if (!body.user_id) throw new BadRequestException('用户ID不能为空');
+    if (!body.content || body.content.trim().length === 0) {
+      throw new BadRequestException('消息内容不能为空');
+    }
+    const data = await this.mvvService.sendMessage(
+      body.user_id,
+      body.content.trim(),
+      body.is_anonymous ?? false,
+    );
+    return { code: 200, msg: 'success', data };
+  }
+
+  @Get('messages')
+  async getMessages(
+    @Query('limit') limit?: string,
+    @Query('before_id') beforeId?: string,
+  ) {
+    const msgLimit = Math.min(parseInt(limit ?? '50', 10) || 50, 100);
+    const before = beforeId ? parseInt(beforeId, 10) : undefined;
+    const data = await this.mvvService.getMessages(msgLimit, before);
+    const count = await this.mvvService.getMessageCount();
+    return { code: 200, msg: 'success', data, total: count };
+  }
 }

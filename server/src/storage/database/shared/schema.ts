@@ -49,3 +49,19 @@ export const mvvVotes = pgTable(
 		uniqueIndex("mvv_votes_submission_user_unique").on(table.submissionId, table.userId),
 	]
 );
+
+// 讨论消息表
+export const mvvMessages = pgTable(
+	"mvv_messages",
+	{
+		id: serial().primaryKey(),
+		userId: integer("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+		content: text("content").notNull(),
+		isAnonymous: boolean("is_anonymous").default(false).notNull(),
+		createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+	},
+	(table) => [
+		index("mvv_messages_user_id_idx").on(table.userId),
+		index("mvv_messages_created_at_idx").on(table.createdAt),
+	]
+);
