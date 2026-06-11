@@ -211,16 +211,19 @@ importers:
         version: 0.31.8
       drizzle-orm:
         specifier: ^0.45.1
-        version: 0.45.1(@types/better-sqlite3@7.6.13)(better-sqlite3@11.10.0)(pg@8.17.2)
+        version: 0.45.1(@types/better-sqlite3@7.6.13)(better-sqlite3@11.10.0)(pg@8.17.2)(postgres@3.4.9)
       drizzle-zod:
         specifier: ^0.8.3
-        version: 0.8.3(drizzle-orm@0.45.1(@types/better-sqlite3@7.6.13)(better-sqlite3@11.10.0)(pg@8.17.2))(zod@4.3.5)
+        version: 0.8.3(drizzle-orm@0.45.1(@types/better-sqlite3@7.6.13)(better-sqlite3@11.10.0)(pg@8.17.2)(postgres@3.4.9))(zod@4.3.5)
       express:
         specifier: 5.2.1
         version: 5.2.1
       pg:
         specifier: ^8.16.3
         version: 8.17.2
+      postgres:
+        specifier: ^3.4.9
+        version: 3.4.9
       rxjs:
         specifier: ^7.8.1
         version: 7.8.2
@@ -4344,9 +4347,6 @@ packages:
 
   '@types/node@16.9.1':
     resolution: {integrity: sha512-QpLcX9ZSsq3YYUUnD3nFDY8H7wctAhQj/TFKL8Ya8v5fMm3CFXxo8zStsLAl780ltoYoo1WvKUVGBQK+1ifr7g==}
-
-  '@types/node@22.19.20':
-    resolution: {integrity: sha512-6tELRwSDYWW9EdZhbeZmYGZ1/7Djkt+Ah3/ScEYT9cDord7UJzasR/4D3VONg9tQI5CDp+/CZC1AXj2pCFOvpw==}
 
   '@types/node@22.19.6':
     resolution: {integrity: sha512-qm+G8HuG6hOHQigsi7VGuLjUVu6TtBo/F05zvX04Mw2uCg9Dv0Qxy3Qw7j41SidlTcl5D/5yg0SEZqOB+EqZnQ==}
@@ -9195,6 +9195,10 @@ packages:
   postgres-interval@1.2.0:
     resolution: {integrity: sha512-9ZhXKM/rw350N1ovuWHbGxnGh/SNJ4cnxHiM0rxE4VN41wsg8P8zWn9hv/buK00RP4WvlOyr/RBDiptyxVbkZQ==}
     engines: {node: '>=0.10.0'}
+
+  postgres@3.4.9:
+    resolution: {integrity: sha512-GD3qdB0x1z9xgFI6cdRD6xu2Sp2WCOEoe3mtnyB5Ee0XrrL5Pe+e4CCnJrRMnL1zYtRDZmQQVbvOttLnKDLnaw==}
+    engines: {node: '>=12'}
 
   prebuild-install@7.1.3:
     resolution: {integrity: sha512-8Mf2cbV7x1cXPUILADGI3wuhfqWvtiLA1iclTDbFRZkgRQS0NqsPZphna9V+HyTEadheuPmjaJMsbzKQFOzLug==}
@@ -15616,7 +15620,7 @@ snapshots:
 
   '@types/better-sqlite3@7.6.13':
     dependencies:
-      '@types/node': 22.19.20
+      '@types/node': 24.12.4
     optional: true
 
   '@types/body-parser@1.19.6':
@@ -15689,11 +15693,6 @@ snapshots:
   '@types/ms@2.1.0': {}
 
   '@types/node@16.9.1': {}
-
-  '@types/node@22.19.20':
-    dependencies:
-      undici-types: 6.21.0
-    optional: true
 
   '@types/node@22.19.6':
     dependencies:
@@ -17990,15 +17989,16 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  drizzle-orm@0.45.1(@types/better-sqlite3@7.6.13)(better-sqlite3@11.10.0)(pg@8.17.2):
+  drizzle-orm@0.45.1(@types/better-sqlite3@7.6.13)(better-sqlite3@11.10.0)(pg@8.17.2)(postgres@3.4.9):
     optionalDependencies:
       '@types/better-sqlite3': 7.6.13
       better-sqlite3: 11.10.0
       pg: 8.17.2
+      postgres: 3.4.9
 
-  drizzle-zod@0.8.3(drizzle-orm@0.45.1(@types/better-sqlite3@7.6.13)(better-sqlite3@11.10.0)(pg@8.17.2))(zod@4.3.5):
+  drizzle-zod@0.8.3(drizzle-orm@0.45.1(@types/better-sqlite3@7.6.13)(better-sqlite3@11.10.0)(pg@8.17.2)(postgres@3.4.9))(zod@4.3.5):
     dependencies:
-      drizzle-orm: 0.45.1(@types/better-sqlite3@7.6.13)(better-sqlite3@11.10.0)(pg@8.17.2)
+      drizzle-orm: 0.45.1(@types/better-sqlite3@7.6.13)(better-sqlite3@11.10.0)(pg@8.17.2)(postgres@3.4.9)
       zod: 4.3.5
 
   dunder-proto@1.0.1:
@@ -21562,6 +21562,8 @@ snapshots:
   postgres-interval@1.2.0:
     dependencies:
       xtend: 4.0.2
+
+  postgres@3.4.9: {}
 
   prebuild-install@7.1.3:
     dependencies:

@@ -27,6 +27,10 @@ export default function Chat() {
   const [loading, setLoading] = useState(true)
   const [sending, setSending] = useState(false)
   const [total, setTotal] = useState(0)
+  const [chatSettings, setChatSettings] = useState({
+    forceDisableAnonymous: false,
+    forceDisableRealname: false,
+  })
   const scrollRef = useRef<any>(null)
 
   const fetchMessages = async () => {
@@ -44,9 +48,32 @@ export default function Chat() {
     }
   }
 
+  // 加载讨论区设置
+  const fetchChatSettings = async () => {
+    try {
+      const res = await Network.request({ url: '/api/mvv/settings/chat' })
+      console.log('[Chat] settings:', res.data)
+      if (res.data?.code === 200) {
+        setChatSettings(res.data.data)
+        // 如果强制关闭了某个模式，自动切换到另一个模式
+        if (res.data.data.forceDisableAnonymous) {
+          setIsAnonymous(false)
+        } else if (res.data.data.forceDisableRealname) {
+          setIsAnonymous(true)
+        }
+      }
+    } catch (err) {
+      console.error('[Chat] settings error:', err)
+    }
+  }
+
   useDidShow(() => {
     fetchMessages()
   })
+
+  useEffect(() => {
+    fetchChatSettings()
+  }, [])
 
   // 自动滚动到底部
   useEffect(() => {
@@ -252,7 +279,19 @@ export default function Chat() {
               </Text>
             </View>
           </View>
-          <Switch checked={isAnonymous} onCheckedChange={setIsAnonymous} />
+          <View className="flex flex-row items-center gap-2">
+            {chatSettings.forceDisableAnonymous && (
+              <Text className="block text-xs text-red-400">强制实名</Text>
+            )}
+            {chatSettings.forceDisableRealname && (
+              <Text className="block text-xs text-red-400">强制匿名</Text>
+            )}
+            <Switch
+              checked={isAnonymous}
+              onCheckedChange={setIsAnonymous}
+              disabled={chatSettings.forceDisableAnonymous || chatSettings.forceDisableRealname}
+            />
+          </View>
         </View>
         {/* 输入区域 */}
         <View className="flex flex-row items-center gap-2 px-3 py-2 pb-4">

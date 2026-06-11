@@ -9,24 +9,130 @@ export class MvvService {
 
   // ========== 用户 ==========
 
-  async createUser(nickname: string) {
+  // 注册申请（填写真实姓名，待审核）
+  async applyUser(realName: string) {
     const { data, error } = await this.client
       .from('users')
-      .insert({ nickname })
-      .select('id, nickname, created_at')
+      .insert({ nickname: realName, real_name: realName, status: 'pending', applied_at: new Date().toISOString() })
+      .select('id, nickname, status, created_at')
       .single();
-    if (error) throw new Error(`创建用户失败: ${error.message}`);
+    if (error) throw new Error(`注册申请失败: ${error.message}`);
     return data;
   }
 
   async getUserById(id: number) {
     const { data, error } = await this.client
       .from('users')
-      .select('id, nickname, created_at')
+      .select('id, nickname, real_name, status, is_admin, created_at')
       .eq('id', id)
       .single();
     if (error) throw new Error(`查询用户失败: ${error.message}`);
     return data;
+  }
+
+  // 管理员登录验证
+  async adminLogin(userId: number, password: string) {
+    const { data: setting, error } = await this.client
+      .from('mvv_settings')
+      .select('value')
+      .eq('key', 'admin_password')
+      .single();
+    if (error) throw new Error('查询管理员密码失败');
+    if (setting.value !== password) throw new Error('管理员密码错误');
+
+    // 验证通过，设置该用户为管理员
+    const { data: user, error: userError } = await this.client
+      .from('users')
+      .update({ is_admin: true })
+      .eq('id', userId)
+      .select('id, nickname, is_admin')
+      .single();
+    if (userError) throw new Error(`设置管理员失败: ${userError.message}`);
+    return user;
+  }
+
+  // 获取待审核用户列表
+  async getPendingUsers() {
+    const { data, error } = await this.client
+      .from('users')
+      .select('id, nickname, real_name, status, created_at, applied_at')
+      .eq('status', 'pending')
+      .order('applied_at', { ascending: true });
+    if (error) throw new Error(`查询待审核用户失败: ${error.message}`);
+    return data ?? [];
+  }
+
+  // 获取所有已批准用户
+  async getApprovedUsers() {
+    const { data, error } = await this.client
+      .from('users')
+      .select('id, nickname, real_name, status, is_admin, created_at')
+      .eq('status', 'approved')
+      .order('created_at', { ascending: true });
+    if (error) throw new Error(`查询用户列表失败: ${error.message}`);
+    return data ?? [];
+  }
+
+  // 审批用户
+  async approveUser(id: number, approvedBy: number) {
+    const { data, error } = await this.client
+      .from('users')
+      .update({
+        status: 'approved',
+        approved_at: new Date().toISOString(),
+        approved_by: approvedBy,
+      })
+      .eq('id', id)
+      .select('id, nickname, real_name, status')
+      .single();
+    if (error) throw new Error(`审批用户失败: ${error.message}`);
+    return data;
+  }
+
+  // 拒绝用户
+  async rejectUser(id: number) {
+    const { data, error } = await this.client
+      .from('users')
+      .update({ status: 'rejected' })
+      .eq('id', id)
+      .select('id, nickname, real_name, status')
+      .single();
+    if (error) throw new Error(`拒绝用户失败: ${error.message}`);
+    return data;
+  }
+
+  // ========== 管理员设置 ==========
+
+  async getSettings() {
+    const { data, error } = await this.client
+      .from('mvv_settings')
+      .select('key, value');
+    if (error) throw new Error(`查询设置失败: ${error.message}`);
+    const settings: Record<string, string> = {};
+    for (const s of data ?? []) {
+      settings[s.key] = s.value;
+    }
+    return settings;
+  }
+
+  async updateSetting(key: string, value: string, updatedBy: number) {
+    const { data, error } = await this.client
+      .from('mvv_settings')
+      .update({ value, updated_by: updatedBy, updated_at: new Date().toISOString() })
+      .eq('key', key)
+      .select()
+      .single();
+    if (error) throw new Error(`更新设置失败: ${error.message}`);
+    return data;
+  }
+
+  // 检查当前讨论区设置（是否强制关闭匿名/实名）
+  async getChatSettings() {
+    const settings = await this.getSettings();
+    return {
+      forceDisableAnonymous: settings['force_disable_anonymous'] === 'true',
+      forceDisableRealname: settings['force_disable_realname'] === 'true',
+    };
   }
 
   // ========== MVV 提交 ==========
@@ -218,6 +324,15 @@ export class MvvService {
   // ========== 讨论消息 ==========
 
   async sendMessage(userId: number, content: string, isAnonymous: boolean) {
+    // 检查管理员设置
+    const chatSettings = await this.getChatSettings();
+    if (isAnonymous && chatSettings.forceDisableAnonymous) {
+      throw new Error('管理员已关闭匿名发言，请使用实名');
+    }
+    if (!isAnonymous && chatSettings.forceDisableRealname) {
+      throw new Error('管理员已关闭实名发言，请使用匿名');
+    }
+
     const { data, error } = await this.client
       .from('mvv_messages')
       .insert({ user_id: userId, content, is_anonymous: isAnonymous })

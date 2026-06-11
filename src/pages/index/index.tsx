@@ -35,10 +35,13 @@ interface SubmissionItem {
 }
 
 const IndexPage: FC = () => {
-  const { user, setUser } = useUserStore();
-  const [showNicknameDialog, setShowNicknameDialog] = useState(!user);
-  const [nickname, setNickname] = useState('');
-  const [creating, setCreating] = useState(false);
+  const { user, applyUser, adminLogin } = useUserStore();
+  const [showRegisterDialog, setShowRegisterDialog] = useState(!user);
+  const [realName, setRealName] = useState('');
+  const [adminPassword, setAdminPassword] = useState('');
+  const [isAdminMode, setIsAdminMode] = useState(false);
+  const [registering, setRegistering] = useState(false);
+  const [applied, setApplied] = useState(false);
 
   // 提交表单
   const [selectedType, setSelectedType] = useState<MvvType>('mission');
@@ -56,6 +59,9 @@ const IndexPage: FC = () => {
     total_submissions: number;
     total_votes: number;
   } | null>(null);
+
+  // 判断用户状态
+  const isPending = user?.status === 'pending';
 
   // 加载最近提交 + 概览
   const loadRecent = async () => {
@@ -83,39 +89,62 @@ const IndexPage: FC = () => {
 
   useEffect(() => {
     if (user) {
+      setShowRegisterDialog(false);
       loadRecent();
     }
   }, [user]);
 
-  // 创建用户
-  const handleCreateUser = async () => {
-    if (!nickname.trim()) {
-      Taro.showToast({ title: '请输入昵称', icon: 'none' });
+  // 注册申请
+  const handleApply = async () => {
+    if (!realName.trim()) {
+      Taro.showToast({ title: '请输入真实姓名', icon: 'none' });
       return;
     }
-    if (nickname.trim().length > 50) {
-      Taro.showToast({ title: '昵称不能超过50个字符', icon: 'none' });
+    if (realName.trim().length > 50) {
+      Taro.showToast({ title: '姓名不能超过50个字符', icon: 'none' });
       return;
     }
-    setCreating(true);
+    setRegistering(true);
     try {
-      const res = await Network.request({
-        url: '/api/mvv/users',
-        method: 'POST',
-        data: { nickname: nickname.trim() },
-      });
-      console.log('创建用户结果:', res.data);
-      const userData = (res.data as any)?.data;
-      if (userData) {
-        setUser({ id: userData.id, nickname: userData.nickname });
-        setShowNicknameDialog(false);
-        Taro.showToast({ title: '欢迎加入！', icon: 'success' });
-      }
-    } catch (err) {
-      console.error('创建用户失败:', err);
-      Taro.showToast({ title: '创建失败，请重试', icon: 'none' });
+      await applyUser(realName.trim());
+      setApplied(true);
+      Taro.showToast({ title: '申请已提交，等待管理员审核', icon: 'success' });
+    } catch (err: any) {
+      console.error('注册申请失败:', err);
+      Taro.showToast({ title: err.message || '申请失败', icon: 'none' });
     } finally {
-      setCreating(false);
+      setRegistering(false);
+    }
+  };
+
+  // 管理员登录
+  const handleAdminLogin = async () => {
+    if (!realName.trim()) {
+      Taro.showToast({ title: '请先输入姓名', icon: 'none' });
+      return;
+    }
+    if (!adminPassword.trim()) {
+      Taro.showToast({ title: '请输入管理员密码', icon: 'none' });
+      return;
+    }
+    setRegistering(true);
+    try {
+      // 先申请注册
+      const applyRes = await Network.request({
+        url: '/api/mvv/users/apply',
+        method: 'POST',
+        data: { real_name: realName.trim() },
+      });
+      const newUser = (applyRes.data as any).data;
+      // 再用管理员密码登录
+      await adminLogin(newUser.id, adminPassword.trim());
+      Taro.showToast({ title: '管理员登录成功！', icon: 'success' });
+      setShowRegisterDialog(false);
+    } catch (err: any) {
+      console.error('管理员登录失败:', err);
+      Taro.showToast({ title: err.message || '登录失败', icon: 'none' });
+    } finally {
+      setRegistering(false);
     }
   };
 
@@ -126,7 +155,11 @@ const IndexPage: FC = () => {
       return;
     }
     if (!user) {
-      Taro.showToast({ title: '请先设置昵称', icon: 'none' });
+      Taro.showToast({ title: '请先注册', icon: 'none' });
+      return;
+    }
+    if (isPending) {
+      Taro.showToast({ title: '您的账号正在审核中，请耐心等待', icon: 'none' });
       return;
     }
     setSubmitting(true);
@@ -155,8 +188,11 @@ const IndexPage: FC = () => {
 
   // 切换用户
   const handleSwitchUser = () => {
-    setShowNicknameDialog(true);
-    setNickname('');
+    setShowRegisterDialog(true);
+    setRealName('');
+    setAdminPassword('');
+    setIsAdminMode(false);
+    setApplied(false);
   };
 
   const getTypeBadge = (type: MvvType) => {
@@ -180,36 +216,83 @@ const IndexPage: FC = () => {
 
   return (
     <View className="flex flex-col h-full bg-gray-50">
-      {/* 昵称设置弹窗 */}
+      {/* 注册/登录弹窗 */}
       <Dialog
-        open={showNicknameDialog}
+        open={showRegisterDialog}
         onOpenChange={(open) => {
-          if (!open && user) setShowNicknameDialog(false);
+          if (!open && user) setShowRegisterDialog(false);
         }}
       >
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>👋 欢迎加入智联数通使命愿景共创</DialogTitle>
+            <DialogTitle>智联数通 · 使命愿景共创</DialogTitle>
           </DialogHeader>
           <View className="py-4">
-            <Text className="block text-sm text-gray-500 mb-3">
-              请设置你的昵称，方便团队成员了解谁写了什么
-            </Text>
-            <Input
-              className="w-full"
-              placeholder="输入你的昵称..."
-              value={nickname}
-              onInput={(e) => setNickname(e.detail.value)}
-            />
-          </View>
-          <View className="flex flex-row gap-3">
-            <Button
-              className="flex-1"
-              disabled={creating || !nickname.trim()}
-              onClick={handleCreateUser}
-            >
-              <Text>{creating ? '创建中...' : '进入共创'}</Text>
-            </Button>
+            {applied ? (
+              <View className="text-center py-6">
+                <Text className="block text-3xl mb-3">📋</Text>
+                <Text className="block text-base font-medium text-gray-900 mb-2">申请已提交</Text>
+                <Text className="block text-sm text-gray-500">
+                  等待管理员审核通过后即可参与共创{'\n'}请留意页面提示
+                </Text>
+              </View>
+            ) : (
+              <>
+                <Text className="block text-sm text-gray-500 mb-1">真实姓名</Text>
+                <View className="bg-gray-50 rounded-xl px-4 py-3 mb-3">
+                  <Input
+                    placeholder="请输入你的真实姓名（用于审核）"
+                    value={realName}
+                    onInput={(e) => setRealName(e.detail.value)}
+                    className="w-full bg-transparent"
+                  />
+                </View>
+                {isAdminMode && (
+                  <>
+                    <Text className="block text-sm text-gray-500 mb-1 mt-2">管理员密码</Text>
+                    <View className="bg-gray-50 rounded-xl px-4 py-3 mb-3">
+                      <Input
+                        placeholder="输入管理员密码"
+                        value={adminPassword}
+                        onInput={(e) => setAdminPassword(e.detail.value)}
+                        className="w-full bg-transparent"
+                      />
+                    </View>
+                  </>
+                )}
+                {isAdminMode ? (
+                  <View className="flex flex-row gap-3 mt-2">
+                    <Button
+                      className="flex-1"
+                      disabled={registering || !realName.trim() || !adminPassword.trim()}
+                      onClick={handleAdminLogin}
+                    >
+                      <Text>{registering ? '登录中...' : '管理员登录'}</Text>
+                    </Button>
+                  </View>
+                ) : (
+                  <View className="flex flex-row gap-3 mt-2">
+                    <Button
+                      className="flex-1"
+                      disabled={registering || !realName.trim()}
+                      onClick={handleApply}
+                    >
+                      <Text>{registering ? '提交中...' : '申请加入'}</Text>
+                    </Button>
+                  </View>
+                )}
+                <View className="mt-4 pt-3 border-t border-gray-100">
+                  <View
+                    className="flex flex-row items-center justify-center"
+                    onClick={() => { setIsAdminMode(!isAdminMode); setAdminPassword(''); }}
+                  >
+                    <Text className="block text-xs text-blue-500">
+                      {isAdminMode ? '← 普通成员申请加入' : '管理员登录 →'}
+                    </Text>
+                  </View>
+                </View>
+              </>
+            )}
           </View>
         </DialogContent>
       </Dialog>

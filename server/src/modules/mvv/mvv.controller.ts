@@ -16,15 +16,58 @@ export class MvvController {
 
   // ========== 用户 ==========
 
-  @Post('users')
-  async createUser(@Body() body: { nickname: string }) {
-    if (!body.nickname || body.nickname.trim().length === 0) {
-      throw new BadRequestException('昵称不能为空');
+  // 注册申请
+  @Post('users/apply')
+  async applyUser(@Body() body: { real_name: string }) {
+    if (!body.real_name || body.real_name.trim().length === 0) {
+      throw new BadRequestException('真实姓名不能为空');
     }
-    if (body.nickname.length > 50) {
-      throw new BadRequestException('昵称不能超过50个字符');
+    if (body.real_name.trim().length > 50) {
+      throw new BadRequestException('姓名不能超过50个字符');
     }
-    const data = await this.mvvService.createUser(body.nickname.trim());
+    const data = await this.mvvService.applyUser(body.real_name.trim());
+    return { code: 200, msg: 'success', data };
+  }
+
+  // 管理员登录
+  @Post('users/admin-login')
+  async adminLogin(@Body() body: { user_id: number; password: string }) {
+    if (!body.user_id) throw new BadRequestException('用户ID不能为空');
+    if (!body.password) throw new BadRequestException('管理员密码不能为空');
+    const data = await this.mvvService.adminLogin(body.user_id, body.password);
+    return { code: 200, msg: 'success', data };
+  }
+
+  // 获取所有已批准用户
+  @Get('users')
+  async getUsers() {
+    const data = await this.mvvService.getApprovedUsers();
+    return { code: 200, msg: 'success', data };
+  }
+
+  // 获取待审核用户列表
+  @Get('users/pending')
+  async getPendingUsers() {
+    const data = await this.mvvService.getPendingUsers();
+    return { code: 200, msg: 'success', data };
+  }
+
+  // 审批用户
+  @Post('users/:id/approve')
+  async approveUser(@Param('id') id: string, @Body() body: { approved_by: number }) {
+    const userId = parseInt(id, 10);
+    if (isNaN(userId)) throw new BadRequestException('无效的用户ID');
+    if (!body.approved_by) throw new BadRequestException('审批人ID不能为空');
+    const data = await this.mvvService.approveUser(userId, body.approved_by);
+    return { code: 200, msg: 'success', data };
+  }
+
+  // 拒绝用户
+  @Post('users/:id/reject')
+  async rejectUser(@Param('id') id: string) {
+    const userId = parseInt(id, 10);
+    if (isNaN(userId)) throw new BadRequestException('无效的用户ID');
+    const data = await this.mvvService.rejectUser(userId);
     return { code: 200, msg: 'success', data };
   }
 
@@ -35,6 +78,30 @@ export class MvvController {
       throw new BadRequestException('无效的用户ID');
     }
     const data = await this.mvvService.getUserById(userId);
+    return { code: 200, msg: 'success', data };
+  }
+
+  // ========== 管理员设置 ==========
+
+  @Get('settings')
+  async getSettings() {
+    const data = await this.mvvService.getSettings();
+    return { code: 200, msg: 'success', data };
+  }
+
+  @Get('settings/chat')
+  async getChatSettings() {
+    const data = await this.mvvService.getChatSettings();
+    return { code: 200, msg: 'success', data };
+  }
+
+  @Post('settings')
+  async updateSetting(
+    @Body() body: { key: string; value: string; updated_by: number },
+  ) {
+    if (!body.key) throw new BadRequestException('设置键不能为空');
+    if (body.updated_by === undefined) throw new BadRequestException('更新人ID不能为空');
+    const data = await this.mvvService.updateSetting(body.key, body.value, body.updated_by);
     return { code: 200, msg: 'success', data };
   }
 

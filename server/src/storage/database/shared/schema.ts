@@ -12,7 +12,25 @@ export const users = pgTable(
 	{
 		id: serial().primaryKey(),
 		nickname: varchar("nickname", { length: 50 }).notNull(),
+		realName: varchar("real_name", { length: 50 }).notNull().default(''),
+		status: varchar("status", { length: 20 }).notNull().default('approved'), // pending | approved | rejected
+		isAdmin: boolean("is_admin").default(false).notNull(),
+		appliedAt: timestamp("applied_at", { withTimezone: true }),
+		approvedAt: timestamp("approved_at", { withTimezone: true }),
+		approvedBy: integer("approved_by"),
 		createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+	},
+);
+
+// 系统设置表
+export const mvvSettings = pgTable(
+	"mvv_settings",
+	{
+		id: serial().primaryKey(),
+		key: varchar("key", { length: 100 }).notNull().unique(),
+		value: text("value").notNull().default(''),
+		updatedBy: integer("updated_by"),
+		updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
 	},
 );
 

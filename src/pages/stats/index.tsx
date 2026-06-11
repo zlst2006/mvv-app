@@ -6,6 +6,8 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import { Badge } from '@/components/ui/badge'
 import { Skeleton } from '@/components/ui/skeleton'
+import { useUserStore } from '@/stores/user'
+import { Settings } from 'lucide-react-taro'
 
 interface UserStats {
   id: number
@@ -61,6 +63,7 @@ function StatsPage() {
   const [stats, setStats] = useState<StatsData | null>(null)
   const [loading, setLoading] = useState(true)
   const [activeTab, setActiveTab] = useState('all')
+  const { user } = useUserStore()
 
   useEffect(() => {
     loadStats()
@@ -120,7 +123,14 @@ function StatsPage() {
       <View className="px-4 pt-4 pb-6 space-y-4">
         {/* ===== 总览卡片 ===== */}
         <View className="bg-gradient-to-r from-blue-500 to-blue-600 rounded-2xl p-5">
-          <Text className="block text-white text-sm mb-3" style={{ opacity: 0.8 }}>数据总览</Text>
+          <View className="flex flex-row items-center justify-between mb-3">
+            <Text className="block text-white text-sm" style={{ opacity: 0.8 }}>数据总览</Text>
+            {user?.is_admin && (
+              <View onClick={() => Taro.navigateTo({ url: '/pages/admin/index' })}>
+                <Settings size={20} color="rgba(255,255,255,0.8)" />
+              </View>
+            )}
+          </View>
           <View className="flex flex-row justify-around">
             <View className="items-center">
               <Text className="block text-white text-2xl font-bold">{overview.total_users}</Text>
