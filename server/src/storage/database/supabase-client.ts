@@ -1,6 +1,6 @@
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import { execSync } from 'child_process';
-import { getReportBuffer, createWrappedFetch } from 'coze-coding-dev-sdk';
+// coze-coding-dev-sdk is lazily imported in getSupabaseClient to support standalone deployment
 
 let envLoaded = false;
 
@@ -105,12 +105,14 @@ function getSupabaseClient(token?: string): SupabaseClient {
     globalOptions.headers = { Authorization: `Bearer ${token}` };
   }
   try {
+    // Use dynamic require to support standalone deployment without coze-coding-dev-sdk
+    const { getReportBuffer, createWrappedFetch } = require('coze-coding-dev-sdk');
     const buffer = getReportBuffer();
     if (buffer) {
       globalOptions.fetch = createWrappedFetch(buffer, 'supabase');
     }
   } catch {
-    // Silent — reporting setup failure should not block client creation
+    // Silent — coze-coding-dev-sdk not available in standalone deployment
   }
 
   return createClient(url, key, {
