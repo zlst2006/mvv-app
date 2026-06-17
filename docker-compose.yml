@@ -1,0 +1,23 @@
+version: '3.8'
+
+services:
+  mvv-server:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: mvv-server
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+      - COZE_SUPABASE_URL=${COZE_SUPABASE_URL}
+      - COZE_SUPABASE_ANON_KEY=${COZE_SUPABASE_ANON_KEY}
+      - COZE_SUPABASE_SERVICE_ROLE_KEY=${COZE_SUPABASE_SERVICE_ROLE_KEY}
+      - ADMIN_PASSWORD=${ADMIN_PASSWORD:-adminzlst@2026}
+    restart: unless-stopped
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
