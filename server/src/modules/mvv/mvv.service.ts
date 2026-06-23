@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, BadRequestException } from '@nestjs/common';
 import { getSupabaseClient } from '@/storage/database/supabase-client';
 
 @Injectable()
@@ -37,8 +37,8 @@ export class MvvService {
       .select('value')
       .eq('key', 'admin_password')
       .single();
-    if (error) throw new Error('查询管理员密码失败');
-    if (setting.value !== password) throw new Error('管理员密码错误');
+    if (error) throw new BadRequestException('查询管理员密码失败');
+    if (setting.value !== password) throw new BadRequestException('管理员密码错误');
 
     // 验证通过，设置该用户为管理员
     const { data: user, error: userError } = await this.client
