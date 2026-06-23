@@ -38,6 +38,14 @@ export class MvvController {
     return { code: 200, msg: 'success', data };
   }
 
+  // 管理员登录（简化版，只需密码）
+  @Post('users/admin-login-simple')
+  async adminLoginSimple(@Body() body: { password: string }) {
+    if (!body.password) throw new BadRequestException('管理员密码不能为空');
+    const data = await this.mvvService.adminLoginSimple(body.password);
+    return { code: 200, msg: 'success', data };
+  }
+
   // 获取所有已批准用户
   @Get('users')
   async getUsers() {

@@ -35,7 +35,7 @@ interface SubmissionItem {
 }
 
 const IndexPage: FC = () => {
-  const { user, applyUser, adminLogin } = useUserStore();
+  const { user, applyUser } = useUserStore();
   const [showRegisterDialog, setShowRegisterDialog] = useState(!user);
   const [realName, setRealName] = useState('');
   const [adminPassword, setAdminPassword] = useState('');
@@ -119,25 +119,19 @@ const IndexPage: FC = () => {
 
   // 管理员登录
   const handleAdminLogin = async () => {
-    if (!realName.trim()) {
-      Taro.showToast({ title: '请先输入姓名', icon: 'none' });
-      return;
-    }
     if (!adminPassword.trim()) {
       Taro.showToast({ title: '请输入管理员密码', icon: 'none' });
       return;
     }
     setRegistering(true);
     try {
-      // 先申请注册
-      const applyRes = await Network.request({
-        url: '/api/mvv/users/apply',
+      const res = await Network.request({
+        url: '/api/mvv/users/admin-login-simple',
         method: 'POST',
-        data: { real_name: realName.trim() },
+        data: { password: adminPassword.trim() },
       });
-      const newUser = (applyRes.data as any).data;
-      // 再用管理员密码登录
-      await adminLogin(newUser.id, adminPassword.trim());
+      const adminUser = (res.data as any).data;
+      useUserStore.getState().setUser(adminUser);
       Taro.showToast({ title: '管理员登录成功！', icon: 'success' });
       setShowRegisterDialog(false);
     } catch (err: any) {
@@ -238,18 +232,22 @@ const IndexPage: FC = () => {
               </View>
             ) : (
               <>
-                <Text className="block text-sm text-gray-500 mb-1">真实姓名</Text>
-                <View className="bg-gray-50 rounded-xl px-4 py-3 mb-3">
-                  <Input
-                    placeholder="请输入你的真实姓名（用于审核）"
-                    value={realName}
-                    onInput={(e) => setRealName(e.detail.value)}
-                    className="w-full bg-transparent"
-                  />
-                </View>
+                {!isAdminMode && (
+                  <>
+                    <Text className="block text-sm text-gray-500 mb-1">真实姓名</Text>
+                    <View className="bg-gray-50 rounded-xl px-4 py-3 mb-3">
+                      <Input
+                        placeholder="请输入你的真实姓名（用于审核）"
+                        value={realName}
+                        onInput={(e) => setRealName(e.detail.value)}
+                        className="w-full bg-transparent"
+                      />
+                    </View>
+                  </>
+                )}
                 {isAdminMode && (
                   <>
-                    <Text className="block text-sm text-gray-500 mb-1 mt-2">管理员密码</Text>
+                    <Text className="block text-sm text-gray-500 mb-1">管理员密码</Text>
                     <View className="bg-gray-50 rounded-xl px-4 py-3 mb-3">
                       <Input
                         placeholder="输入管理员密码"
@@ -264,7 +262,7 @@ const IndexPage: FC = () => {
                   <View className="flex flex-row gap-3 mt-2">
                     <Button
                       className="flex-1"
-                      disabled={registering || !realName.trim() || !adminPassword.trim()}
+                      disabled={registering || !adminPassword.trim()}
                       onClick={handleAdminLogin}
                     >
                       <Text>{registering ? '登录中...' : '管理员登录'}</Text>

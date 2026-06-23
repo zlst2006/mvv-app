@@ -51,6 +51,20 @@ export class MvvService {
     return user;
   }
 
+  // 管理员登录（简化版，只需密码）
+  async adminLoginSimple(password: string) {
+    const { data: setting, error } = await this.client
+      .from('mvv_settings')
+      .select('value')
+      .eq('key', 'admin_password')
+      .single();
+    if (error) throw new Error('查询管理员密码失败');
+    if (setting.value !== password) throw new Error('管理员密码错误');
+
+    // 返回虚拟管理员用户
+    return { id: -1, nickname: '管理员', is_admin: true, status: 'approved' };
+  }
+
   // 获取待审核用户列表
   async getPendingUsers() {
     const { data, error } = await this.client
