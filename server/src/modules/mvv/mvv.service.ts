@@ -58,8 +58,8 @@ export class MvvService {
       .select('value')
       .eq('key', 'admin_password')
       .single();
-    if (error) throw new Error('查询管理员密码失败');
-    if (setting.value !== password) throw new Error('管理员密码错误');
+    if (error) throw new BadRequestException('查询管理员密码失败');
+    if (setting.value !== password) throw new BadRequestException('管理员密码错误');
 
     // 返回虚拟管理员用户
     return { id: -1, nickname: '管理员', is_admin: true, status: 'approved' };
